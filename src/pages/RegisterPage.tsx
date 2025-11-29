@@ -37,17 +37,43 @@ export function RegisterPage() {
 
     setLoading(true);
 
+    console.log('🔐 Attempting registration:', {
+      username: formData.username,
+      fullName: formData.fullName,
+      hasPassword: !!formData.password
+    });
+
     try {
-      await authAPI.register({
+      const response = await authAPI.register({
         username: formData.username,
         password: formData.password,
         fullName: formData.fullName,
       });
       
+      console.log('✅ Registration successful:', response.data);
       toast.success('Registration successful! Please login.');
       navigate('/login');
     } catch (error: any) {
-      const errorMessage = error.response?.data || error.response?.data?.message || 'Registration failed';
+      console.error('❌ Registration error:', error);
+      
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (error.response) {
+        // Server responded with error
+        console.error('Server error response:', error.response.data);
+        errorMessage = error.response.data?.message || 
+                      error.response.data?.error ||
+                      'Registration failed. Username may already exist.';
+      } else if (error.request) {
+        // Request made but no response
+        console.error('Network error - no response:', error.request);
+        errorMessage = 'Cannot connect to server. Please check if the backend is running.';
+      } else {
+        // Other errors
+        console.error('Error:', error.message);
+        errorMessage = 'An unexpected error occurred. Please try again.';
+      }
+      
       toast.error(errorMessage);
     } finally {
       setLoading(false);
