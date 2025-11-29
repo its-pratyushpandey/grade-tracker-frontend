@@ -45,7 +45,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       toast.success('Login successful!');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Request timeout. The server may be sleeping (free tier). Please wait 30 seconds and try again.';
+      } else if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED') {
+        errorMessage = 'Cannot connect to server. Please check your internet connection or try again later.';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Invalid username or password.';
+      } else if (error.response?.status === 403) {
+        errorMessage = 'Access denied. Your account may be disabled.';
+      } else if (error.response?.data) {
+        errorMessage = error.response.data.message || error.response.data.error || error.response.data;
+      } else if (error.request) {
+        errorMessage = 'Cannot connect to server. The backend may be starting up. Please wait a moment and try again.';
+      }
+      
+      toast.error(errorMessage, { duration: 5000 });
       throw error;
     }
   };

@@ -13,7 +13,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 seconds
+  timeout: 60000, // 60 seconds for deployed backend (free tier may sleep)
+  withCredentials: false, // Set to false for cross-origin requests
 });
 
 // Request interceptor to add auth token
@@ -58,6 +59,28 @@ api.interceptors.response.use(
       message: error.message,
       code: error.code
     });
+
+    // Enhanced error messages
+    if (error.code === 'ECONNABORTED') {
+      console.error('⏱️ Request timeout - backend may be sleeping (free tier). Try again in a few seconds.');
+    } else if (error.code === 'ERR_NETWORK') {
+      console.error('🌐 Network error - check if backend is running or CORS is configured.');
+    } else if (!error.response) {
+      console.error('📡 No response from server - backend may be down or CORS blocked the request.');
+    }
+
+    // Handle 401 Unauthorized
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
     
     if (error.response?.status === 401) {
       localStorage.removeItem('token');

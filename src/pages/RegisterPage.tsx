@@ -58,23 +58,28 @@ export function RegisterPage() {
       
       let errorMessage = 'Registration failed. Please try again.';
       
-      if (error.response) {
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Request timeout. The server may be sleeping (free tier). Please wait 30 seconds and try again.';
+      } else if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED') {
+        errorMessage = 'Cannot connect to server. Please check your internet connection or try again later.';
+      } else if (error.response) {
         // Server responded with error
         console.error('Server error response:', error.response.data);
         errorMessage = error.response.data?.message || 
                       error.response.data?.error ||
+                      error.response.data ||
                       'Registration failed. Username may already exist.';
       } else if (error.request) {
         // Request made but no response
         console.error('Network error - no response:', error.request);
-        errorMessage = 'Cannot connect to server. Please check if the backend is running.';
+        errorMessage = 'Cannot connect to server. The backend may be starting up. Please wait a moment and try again.';
       } else {
         // Other errors
         console.error('Error:', error.message);
         errorMessage = 'An unexpected error occurred. Please try again.';
       }
       
-      toast.error(errorMessage);
+      toast.error(errorMessage, { duration: 5000 });
     } finally {
       setLoading(false);
     }
