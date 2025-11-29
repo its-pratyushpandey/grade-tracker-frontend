@@ -1,4 +1,3 @@
-import React from 'react';
 import { FileDown, FileText } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';

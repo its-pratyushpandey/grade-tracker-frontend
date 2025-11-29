@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, Lock, User, Mail, UserPlus, ArrowLeft } from 'lucide-react';
+import { BookOpen, Lock, User, UserPlus, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import toast from 'react-hot-toast';
 import { authAPI } from '../services/api';

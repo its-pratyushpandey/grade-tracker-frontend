@@ -1,14 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Users, BookOpen, TrendingUp, Award } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Loading } from '../components/ui/Loading';
 import { statisticsAPI } from '../services/api';
 import { Statistics } from '../types';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
-
-const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
 export function DashboardPage() {
   const [stats, setStats] = useState<Statistics | null>(null);

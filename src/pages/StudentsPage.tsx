@@ -1,15 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Eye } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Plus, Search, Edit2, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Loading } from '../components/ui/Loading';
 import { Modal } from '../components/ui/Modal';
 import { Student } from '../types';
-import { studentsAPI, gradesAPI } from '../services/api';
+import { studentsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
 
 export function StudentsPage() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -25,7 +24,6 @@ export function StudentsPage() {
     enrollmentId: '',
   });
   const { isAdmin } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
     loadStudents();
@@ -75,7 +73,7 @@ export function StudentsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this student?')) return;
 
     try {
