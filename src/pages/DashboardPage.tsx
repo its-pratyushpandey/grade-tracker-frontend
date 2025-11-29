@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Users, BookOpen, TrendingUp, Award } from 'lucide-react';
 import { Card } from '../components/ui/Card';
-import { Loading } from '../components/ui/Loading';
+import { ChartSkeleton } from '../components/ui/Skeleton';
 import { statisticsAPI } from '../services/api';
 import { Statistics } from '../types';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -12,11 +12,7 @@ export function DashboardPage() {
   const [stats, setStats] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadStatistics();
-  }, []);
-
-  const loadStatistics = async () => {
+  const loadStatistics = useCallback(async () => {
     try {
       const response = await statisticsAPI.getOverall();
       setStats(response.data);
@@ -25,29 +21,53 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  if (loading) {
-    return <Loading fullScreen />;
-  }
+  useEffect(() => {
+    loadStatistics();
+  }, [loadStatistics]);
 
   if (!stats) {
     return <div className="text-center text-gray-600">No data available</div>;
   }
 
-  const gradeDistributionData = [
+  const gradeDistributionData = useMemo(() => [
     { name: 'A (90-100)', value: stats.distribution.gradeA, color: '#10b981' },
     { name: 'B (80-89)', value: stats.distribution.gradeB, color: '#3b82f6' },
     { name: 'C (70-79)', value: stats.distribution.gradeC, color: '#f59e0b' },
     { name: 'D (60-69)', value: stats.distribution.gradeD, color: '#ef4444' },
     { name: 'F (0-59)', value: stats.distribution.gradeF, color: '#8b5cf6' },
-  ];
+  ], [stats]);
 
-  const coursePerformanceData = stats.coursePerformances.map(cp => ({
-    name: cp.courseCode,
-    average: Number(cp.averageGrade.toFixed(2)),
-    students: cp.totalStudents,
-  }));
+  const coursePerformanceData = useMemo(() => 
+    stats.coursePerformances.map(cp => ({
+      name: cp.courseCode,
+      average: Number(cp.averageGrade.toFixed(2)),
+      students: cp.totalStudents,
+    })), [stats]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <div className="h-8 w-48 bg-gray-200 animate-pulse rounded mb-2" />
+          <div className="h-4 w-96 bg-gray-200 animate-pulse rounded" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-white rounded-lg p-6 border">
+              <div className="h-4 w-24 bg-gray-200 animate-pulse rounded mb-4" />
+              <div className="h-8 w-16 bg-gray-200 animate-pulse rounded" />
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card><ChartSkeleton /></Card>
+          <Card><ChartSkeleton /></Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -111,15 +131,19 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Grade Distribution */}
         <Card title="Grade Distribution" description="Distribution of letter grades">
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={300} className="touch-pan-y">
             <PieChart>
               <Pie
                 data={gradeDistributionData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
+                label={({ name, percent }) => {
+                  // Hide labels on small screens
+                  if (window.innerWidth < 640) return '';
+                  return `${name}: ${(percent * 100).toFixed(0)}%`;
+                }}
+                outerRadius={window.innerWidth < 640 ? 60 : 80}
                 fill="#8884d8"
                 dataKey="value"
               >
@@ -128,19 +152,26 @@ export function DashboardPage() {
                 ))}
               </Pie>
               <Tooltip />
+              <Legend wrapperStyle={{ fontSize: '12px' }} />
             </PieChart>
           </ResponsiveContainer>
         </Card>
 
         {/* Course Performance */}
         <Card title="Course Performance" description="Average scores by course">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={coursePerformanceData}>
+          <ResponsiveContainer width="100%" height={300} className="touch-pan-y">
+            <BarChart data={coursePerformanceData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis domain={[0, 100]} />
+              <XAxis 
+                dataKey="name" 
+                angle={window.innerWidth < 640 ? -45 : 0}
+                textAnchor={window.innerWidth < 640 ? 'end' : 'middle'}
+                height={window.innerWidth < 640 ? 60 : 30}
+                tick={{ fontSize: 12 }}
+              />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Legend />
+              <Legend wrapperStyle={{ fontSize: '12px' }} />
               <Bar dataKey="average" fill="#3b82f6" name="Average Score" />
             </BarChart>
           </ResponsiveContainer>

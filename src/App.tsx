@@ -1,16 +1,18 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Layout } from './components/layout/Layout';
-import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { StudentsPage } from './pages/StudentsPage';
-import { CoursesPage } from './pages/CoursesPage';
-import { StatisticsPage } from './pages/StatisticsPage';
-import { ReportsPage } from './pages/ReportsPage';
 import { Loading } from './components/ui/Loading';
+
+// Lazy load pages for better performance
+const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('./pages/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const StudentsPage = lazy(() => import('./pages/StudentsPage').then(m => ({ default: m.StudentsPage })));
+const CoursesPage = lazy(() => import('./pages/CoursesPage').then(m => ({ default: m.CoursesPage })));
+const StatisticsPage = lazy(() => import('./pages/StatisticsPage').then(m => ({ default: m.StatisticsPage })));
+const ReportsPage = lazy(() => import('./pages/ReportsPage').then(m => ({ default: m.ReportsPage })));
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { token, loading } = useAuth();
@@ -26,9 +28,10 @@ function AppRoutes() {
   const { token } = useAuth();
 
   return (
-    <Routes>
-      <Route path="/login" element={token ? <Navigate to="/dashboard" /> : <LoginPage />} />
-      <Route path="/register" element={token ? <Navigate to="/dashboard" /> : <RegisterPage />} />
+    <Suspense fallback={<Loading fullScreen />}>
+      <Routes>
+        <Route path="/login" element={token ? <Navigate to="/dashboard" /> : <LoginPage />} />
+        <Route path="/register" element={token ? <Navigate to="/dashboard" /> : <RegisterPage />} />
       
       <Route
         path="/"
@@ -46,8 +49,9 @@ function AppRoutes() {
         <Route path="reports" element={<ReportsPage />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/dashboard" />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/dashboard" />} />
+      </Routes>
+    </Suspense>
   );
 }
 

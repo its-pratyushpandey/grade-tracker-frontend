@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import { Plus, Search, Edit2, Trash2 } from 'lucide-react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { Plus, Search, Edit2, Trash2, Mail, Phone, GraduationCap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Loading } from '../components/ui/Loading';
+import { CardSkeleton } from '../components/ui/Skeleton';
 import { Modal } from '../components/ui/Modal';
 import { Student } from '../types';
 import { studentsAPI } from '../services/api';
@@ -25,11 +25,7 @@ export function StudentsPage() {
   });
   const { isAdmin } = useAuth();
 
-  useEffect(() => {
-    loadStudents();
-  }, []);
-
-  const loadStudents = async () => {
+  const loadStudents = useCallback(async () => {
     try {
       const response = await studentsAPI.getAllWithoutPagination();
       setStudents(response.data);
@@ -38,7 +34,11 @@ export function StudentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadStudents();
+  }, [loadStudents]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -116,7 +116,32 @@ export function StudentsPage() {
     return 'bg-red-100 text-red-800';
   };
 
-  if (loading) return <Loading fullScreen />;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <div className="h-8 w-48 bg-gray-200 animate-pulse rounded mb-2" />
+            <div className="h-4 w-96 bg-gray-200 animate-pulse rounded" />
+          </div>
+          <div className="h-10 w-32 bg-gray-200 animate-pulse rounded" />
+        </div>
+        <Card>
+          <div className="h-10 bg-gray-200 animate-pulse rounded" />
+        </Card>
+        <Card>
+          <div className="hidden md:block space-y-3">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="h-16 bg-gray-200 animate-pulse rounded" />
+            ))}
+          </div>
+          <div className="md:hidden space-y-4">
+            {[1, 2, 3].map(i => <CardSkeleton key={i} />)}
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -157,9 +182,10 @@ export function StudentsPage() {
         </div>
       </Card>
 
-      {/* Students Table */}
+      {/* Students List */}
       <Card>
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -208,14 +234,14 @@ export function StudentsPage() {
                         <>
                           <button
                             onClick={() => handleEdit(student)}
-                            className="text-blue-600 hover:text-blue-800"
+                            className="text-blue-600 hover:text-blue-800 p-2 active:scale-95"
                             title="Edit"
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleDelete(student.id)}
-                            className="text-red-600 hover:text-red-800"
+                            className="text-red-600 hover:text-red-800 p-2 active:scale-95"
                             title="Delete"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -228,6 +254,80 @@ export function StudentsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden space-y-4">
+          {students.map((student, index) => (
+            <motion.div
+              key={student.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 text-lg">
+                    {student.firstName} {student.lastName}
+                  </h3>
+                  <span className="badge badge-primary text-xs mt-1">
+                    {student.enrollmentId || 'N/A'}
+                  </span>
+                </div>
+                {isAdmin && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(student)}
+                      className="text-blue-600 hover:text-blue-800 p-2 active:scale-95"
+                      title="Edit"
+                    >
+                      <Edit2 className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(student.id)}
+                      className="text-red-600 hover:text-red-800 p-2 active:scale-95"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Mail className="w-4 h-4" />
+                  <span className="truncate">{student.email}</span>
+                </div>
+                {student.phoneNumber && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Phone className="w-4 h-4" />
+                    <span>{student.phoneNumber}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-gray-600">
+                  <GraduationCap className="w-4 h-4" />
+                  <span>Grades: {student.totalGrades || 0}</span>
+                </div>
+              </div>
+
+              {student.averageGrade ? (
+                <div className="mt-3 pt-3 border-t">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-500">Average:</span>
+                    <span className={`badge ${getStatusColor(student.averageGrade)} text-sm font-semibold`}>
+                      {student.averageGrade.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3 pt-3 border-t text-center text-gray-400 text-sm">
+                  No grades yet
+                </div>
+              )}
+            </motion.div>
+          ))}
         </div>
       </Card>
 
